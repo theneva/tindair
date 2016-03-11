@@ -1,0 +1,14 @@
+# OSX
+.DS_Store
+
+# IntelliJ
+.idea/
+*.iml
+
+# VIM
+*.swo
+*.swp
+
+# Node
+node_modules/
+npm-debug.log
