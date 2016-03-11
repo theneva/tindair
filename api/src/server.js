@@ -33,6 +33,10 @@ app.get('/users', (req, res) => {
   res.send(users);
 });
 
+app.post('/users', (req, res) => {
+  return res.status(501).send();
+});
+
 const userByUsername = username => users.find(user => user.username === username);
 
 app.get('/users/:username', (req, res) => {
@@ -43,6 +47,10 @@ app.get('/destinations', (req, res) => {
   res.send(destinations);
 });
 
+app.post('/destinations', (req, res) => {
+  res.status(501).send();
+});
+
 const destinationById = id => destinations[id];
 
 app.get('/users/:username/destinations', (req, res) => {
@@ -50,8 +58,16 @@ app.get('/users/:username/destinations', (req, res) => {
       .map(id => destinationById(id)));
 });
 
+app.post('/users/:username/destinations', (req, res) => {
+  res.status(501).send();
+});
+
 app.get('/friendships', (req, res) => {
   res.send(friendships);
+});
+
+app.post('/friendships', (req, res) => {
+  res.status(501).send();
 });
 
 const friendshipsByUsername = username => friendships
@@ -66,6 +82,7 @@ app.get('/users/:username/friends', (req, res) => {
   res.send(friendshipsByUsername(req.params.username));
 });
 
+// Potential TODO: save "matches" separately, and just create one when adding one
 const matchesByUserByFriend = user => friendshipsByUsername(user.username)
     .map(friendUsername => userByUsername(friendUsername).destinations
         .filter(friendDestination => user.destinations
@@ -75,8 +92,7 @@ const matchesByUserByFriend = user => friendshipsByUsername(user.username)
           destination: destinationById(destination),
         })));
 
-const matchesByUser = user => []
-    .concat.apply([], matchesByUserByFriend(user));
+const matchesByUser = user => [].concat.apply([], matchesByUserByFriend(user));
 
 app.get('/users/:username/matches', (req, res) => {
   const username = req.params.username;
@@ -86,6 +102,10 @@ app.get('/users/:username/matches', (req, res) => {
   } else {
     res.send(matchesByUser(userByUsername(username)));
   }
+});
+
+app.post('/users/:username/matches', (req, res) => {
+  res.status(501).send();
 });
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
