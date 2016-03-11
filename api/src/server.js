@@ -78,7 +78,7 @@ app.get('/friendships/:username', (req, res) => {
   res.send(friendshipsByUsername(req.params.username));
 });
 
-app.get('/users/:username/friends', (req, res) => {
+app.get('/users/:username/friendships', (req, res) => {
   res.send(friendshipsByUsername(req.params.username));
 });
 
