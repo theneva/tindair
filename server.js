@@ -102,10 +102,15 @@ const connect = httpServer => {
   server = new ws.Server({server: httpServer});
 
   server.on('connection', socket => {
-    const username = socket.upgradeReq.headers['x-name'];
+    const urlPath = socket.upgradeReq.url.substring(1);
+    const params = urlPath.split(/=/);
+
+    const username = params[1];
+
+    console.log('user', username, 'connected');
 
     if (!username) {
-      socket.send('cannot connect without being logged in (identify via x-user header)');
+      socket.send('cannot connect without being logged in (provide username as url parameter)');
       socket.close();
     }
 
@@ -117,7 +122,7 @@ const connect = httpServer => {
     socket.on('close', () => {
       sockets.splice(sockets.findIndex(s => s.socket === socket), 1);
     });
-  })
+  });
 };
 
 app.post('/travel-requests', (req, res) => {
