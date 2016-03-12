@@ -1,3 +1,5 @@
+'use strict';
+
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const express = require('express');
@@ -93,4 +95,65 @@ app.get('/destinations/:name/users', (req, res) => res.send(User.byDestination(r
         ? util.arrayContains(user.friends.map(friend => friend.toLowerCase()), req.query.friendsWith.toLowerCase())
         : true)));
 
-app.listen(port, () => console.log(`Listening on port ${port}`));
+const sockets = [];
+const ws = require('ws');
+let server;
+const connect = httpServer => {
+  server = new ws.Server({server: httpServer});
+
+  server.on('connection', socket => {
+    const username = socket.upgradeReq.headers['x-name'];
+
+    if (!username) {
+      socket.send('cannot connect without being logged in (identify via x-user header)');
+      socket.close();
+    }
+
+    sockets.push({
+      socket,
+      username,
+    });
+
+    socket.on('close', () => {
+      sockets.splice(sockets.findIndex(s => s.socket === socket), 1);
+    });
+  })
+};
+
+app.post('/travel-requests', (req, res) => {
+  const user = req.header('X-Name');
+
+  console.log('user', user, 'body', req.body);
+
+  if (!user) {
+    return res.status(401).send('cannot send requests without being logged in (identify via X-Name header');
+  }
+
+  const destination = req.body.destination;
+
+  if (!destination) {
+    return res.status(400).send('destination must exist');
+  }
+
+  const usernames = req.body.usernames;
+
+  console.log('blah');
+
+  if (!usernames || !(usernames instanceof Array)) {
+    return res.status(400).send('usernames must be an array of strings');
+  }
+
+  const payload = {
+    topic: 'new travel request',
+    data: {destination, sender: user},
+  };
+
+  sockets
+      .filter(socket => util.arrayContains(usernames, socket.username))
+      .forEach(socket => socket.socket.send(JSON.stringify(payload)));
+
+  res.status(201).send();
+});
+
+const httpServer = app.listen(port, () => console.log(`Listening on port ${port}`));
+connect(httpServer);
