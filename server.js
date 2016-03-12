@@ -56,12 +56,8 @@ app.post('/users/:username/destinations', (req, res) => {
 app.get('/destinations', (req, res) => res.send(Destination.all()));
 
 app.get('/destinations/random', (req, res) => {
-  try {
-    const count = req.query.count ? parseInt(req.query.count) : 5;
-    res.send(Destination.sample(count))
-  } catch (e) {
-    res.status(400).send('query param "count" must be an integer');
-  }
+    const count = parseInt(req.query.count);
+    res.send(Destination.sample(isNaN(count) ? 5 : count));
 });
 
 app.get('/destinations/:name', (req, res) => res.send(Destination.byName(req.params.name) || 'no such destination'));
