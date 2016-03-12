@@ -2,110 +2,73 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const express = require('express');
 
+const util = require('./util.js');
+
+const Destination = require('./Destination.js');
+const User = require('./User.js');
+
 const app = express();
 const port = 7893;
 
 app.use(cors());
 app.use(bodyParser.json());
 
-const destinations = [
-  {name: 'Spain', categories: ['hot', 'beach']},
-  {name: 'LA', categories: ['city']},
-  {name: 'Gothenburg', categories: ['city', 'nordic', 'capital']},
-  {name: 'Oslo', categories: ['city', 'nordic', 'capital']},
-  {name: 'Bergen', categories: ['city', 'nordic']},
-  {name: 'Stavanger', categories: ['city', 'nordic']},
-].map((name, index) => ({id: `${index}`, name}));
+app.get('/', (req, res) => res.send({
+  links: [
+    {rel: 'self', method: 'get', href: '/'},
+    {rel: 'users', method: 'get', href: '/users'},
+    {rel: 'user', method: 'get', href: '/users/:username'},
+    {rel: 'destinations by user', method: 'get', href: '/users/:username/destinations'},
+    {rel: 'add destination to user', method: 'post', href: '/users/:username/destinations', payload: '{destinationName}'},
+    {rel: 'destinations', method: 'get', href: '/destinations'},
+    {rel: 'random destination', method: 'get', href: '/destinations/random'},
+    {rel: 'destination by name', method: 'get', href: '/destinations/:name'},
+    {rel: 'users who liked destination', method: 'get', href: '/destinations/:name/users'},
+  ],
+}));
 
-const users = [
-  {id: '0', username: 'andreas', name: 'Andreas', destinations: [1, 2, 3]},
-  {id: '1', username: 'martin', name: 'Martin', destinations: [1, 2]},
-  {id: '2', username: 'håkon', name: 'Håkon', destinations: [3, 2]},
-];
+app.get('/users', (req, res) => res.send(User.all()));
 
-const friendships = [
-  {left: 'andreas', right: 'martin'},
-  {left: 'andreas', right: 'håkon'},
-  {left: 'håkon', right: 'martin'},
-];
+app.get('/users/:username', (req, res) => res.send(User.byUsername(req.params.username)));
 
-app.get('/users', (req, res) => {
-  res.send(users);
-});
-
-app.post('/users', (req, res) => {
-  return res.status(501).send();
-});
-
-const userByUsername = username => users.find(user => user.username === username);
-
-app.get('/users/:username', (req, res) => {
-  res.send(userByUsername(req.params.username));
-});
-
-app.get('/destinations', (req, res) => {
-  res.send(destinations);
-});
-
-app.post('/destinations', (req, res) => {
-  res.status(501).send();
-});
-
-const destinationById = id => destinations[id];
-
-app.get('/users/:username/destinations', (req, res) => {
-  res.send(userByUsername(req.params.username).destinations
-      .map(id => destinationById(id)));
-});
+app.get('/users/:username/destinations', (req, res) => res.send(User.byUsername(req.params.username).destinations));
 
 app.post('/users/:username/destinations', (req, res) => {
-  res.status(501).send();
+  const destination = req.body.destination;
+
+  if (!destination || !Destination.byName(destination)) {
+    return res.status(400).send('body must be a destination name');
+  }
+
+  const user = User.byUsername(req.params.username);
+
+  if (util.arrayContains(user.destinations, destination)) {
+    return res.status(400).send('user has already added that destination');
+  }
+
+  user.destinations.push(destination);
+
+  // TODO: Send socket message
+
+  res.status(201).send(user);
 });
 
-app.get('/friendships', (req, res) => {
-  res.send(friendships);
-});
+app.get('/destinations', (req, res) => res.send(Destination.all()));
 
-app.post('/friendships', (req, res) => {
-  res.status(501).send();
-});
-
-const friendshipsByUsername = username => friendships
-    .filter(friendship => friendship.left === username || friendship.right === username)
-    .map(friendship => friendship.left === username ? friendship.right : friendship.left);
-
-app.get('/friendships/:username', (req, res) => {
-  res.send(friendshipsByUsername(req.params.username));
-});
-
-app.get('/users/:username/friendships', (req, res) => {
-  res.send(friendshipsByUsername(req.params.username));
-});
-
-// Potential TODO: save "matches" separately, and just create one when adding one
-const matchesByUserByFriend = user => friendshipsByUsername(user.username)
-    .map(friendUsername => userByUsername(friendUsername).destinations
-        .filter(friendDestination => user.destinations
-            .filter(destination => destination === friendDestination))
-        .map(destination => ({
-          friend: userByUsername(friendUsername),
-          destination: destinationById(destination),
-        })));
-
-const matchesByUser = user => [].concat.apply([], matchesByUserByFriend(user));
-
-app.get('/users/:username/matches', (req, res) => {
-  const username = req.params.username;
-
-  if (req.query.groupByFriend === 'true') {
-    res.send(matchesByUserByFriend(userByUsername(username)));
-  } else {
-    res.send(matchesByUser(userByUsername(username)));
+app.get('/destinations/random', (req, res) => {
+  try {
+    const count = req.query.count ? parseInt(req.query.count) : 5;
+    res.send(Destination.sample(count))
+  } catch (e) {
+    res.status(400).send('query param "count" must be an integer');
   }
 });
 
-app.post('/users/:username/matches', (req, res) => {
-  res.status(501).send();
-});
+app.get('/destinations/:name', (req, res) => res.send(Destination.byName(req.params.name) || 'no such destination'));
+
+app.get('/destinations/:name/users', (req, res) => res.send(User.byDestination(req.params.name)
+    .filter(user => req.query.friendsWith
+        ? util.arrayContains(user.friends.map(friend => friend.toLowerCase()), req.query.friendsWith.toLowerCase())
+        : true)));
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
