@@ -19,7 +19,12 @@ app.get('/', (req, res) => res.send({
     {rel: 'users', method: 'get', href: '/users'},
     {rel: 'user', method: 'get', href: '/users/:username'},
     {rel: 'destinations by user', method: 'get', href: '/users/:username/destinations'},
-    {rel: 'add destination to user', method: 'post', href: '/users/:username/destinations', payload: '{destinationName}'},
+    {
+      rel: 'add destination to user',
+      method: 'post',
+      href: '/users/:username/destinations',
+      payload: '{destinationName}'
+    },
     {rel: 'destinations', method: 'get', href: '/destinations'},
     {rel: 'random destination', method: 'get', href: '/destinations/random'},
     {rel: 'destination by name', method: 'get', href: '/destinations/:name'},
@@ -55,9 +60,30 @@ app.post('/users/:username/destinations', (req, res) => {
 
 app.get('/destinations', (req, res) => res.send(Destination.all()));
 
+const withFriends = (destinations, username) => {
+  const user = User.byUsername(username);
+
+  return destinations.map(destination => ({
+    destination,
+    friends: User.byDestination(destination.name)
+        .filter(potentialFriend => util.arrayContains(potentialFriend.friends, user.username)),
+  }));
+};
+
 app.get('/destinations/random', (req, res) => {
-    const count = parseInt(req.query.count);
-    res.send(Destination.sample(isNaN(count) ? 5 : count));
+  const count = parseInt(req.query.count);
+  const sample = Destination.sample(isNaN(count) ? 5 : count);
+
+  const username = req.header('X-Name');
+
+  if (username) {
+    res.send(withFriends(sample, username));
+  } else {
+    res.send(sample.map(destination => ({
+      destination,
+      friends: [],
+    })));
+  }
 });
 
 app.get('/destinations/:name', (req, res) => res.send(Destination.byName(req.params.name) || 'no such destination'));

@@ -10,7 +10,7 @@ const users = [{
   username: 'martin',
   name: 'Martin',
   profilePicture: 'http://www.cbc.ca/smartestperson/content/image/avatar-placeholder.png',
-  friends: ['andreas', 'håkon'],
+  friends: ['håkon'],
   destinations: ['Spain', 'LA', 'Oslo']
 }, {
   username: 'håkon',
@@ -22,7 +22,7 @@ const users = [{
 
 module.exports = {
   all: () => users.slice(),
-  byUsername: username => users.find(user => user.username === username),
+  byUsername: username => users.find(user => user.username.toLowerCase() === username.toLowerCase()),
   byDestination: destination => users
       .filter(user => util.arrayContains(
           user.destinations.map(destination => destination.toLowerCase()),
