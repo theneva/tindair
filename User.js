@@ -9,7 +9,7 @@ const users = [{
 }, {
   username: 'martin',
   name: 'Martin',
-  profilePicture: 'http://www.cbc.ca/smartestperson/content/image/avatar-placeholder.png',
+  profilePicture: 'http://askfedoratest-anuradhaw.rhcloud.com/static/askfedoratheme/images/man.png',
   friends: ['håkon'],
   destinations: ['Spain', 'LA', 'Oslo']
 }, {
