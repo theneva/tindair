@@ -1,7 +1,9 @@
 'use strict';
 
+const btoa = require('btoa');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const fetch = require('node-fetch');
 const express = require('express');
 
 const util = require('./util.js');
@@ -96,6 +98,41 @@ app.get('/destinations/:name/users', (req, res) => res.send(User.byDestination(r
         ? util.arrayContains(user.friends.map(friend => friend.toLowerCase()), req.query.friendsWith.toLowerCase())
         : true)));
 
+app.get('/destinations/:name/book', (req, res) => {
+  const departureAirportCode = 'OSL';
+  const destinationAirportCode = Destination.byName(req.params.name).airportCode;
+
+  const clientId = 'V1:sb2temnqfhrdlmwx:DEVCENTER:EXT';
+  const clientSecret = '37uKjBsS';
+
+  const encodedClientId = btoa(clientId);
+  const encodedClientSecret = btoa(clientSecret);
+
+  const singleString = btoa(`${encodedClientId}:${encodedClientSecret}`);
+
+  fetch('https://api.test.sabre.com/v2/auth/token', {
+    method: 'post',
+    headers: {
+      Authorization: `Basic ${singleString}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'grant_type=client_credentials',
+  })
+      .then(res => res.json())
+      .then(response => response.access_token)
+      .then(token => fetch(`https://api.test.sabre.com/v2/shop/flights/fares?origin=${departureAirportCode}&destination=${destinationAirportCode}&departuredate=2016-03-18,2016-03-19,2016-03-20&lengthofstay=3,4,5,6,7&maxfare=50000`, {
+        headers: {
+          Authorization: `Bearer: ${token}`,
+        },
+      })
+          .then(response => response.json())
+          .then(flightInfo => res.json(flightInfo))
+          .catch(err => {
+            console.log('wtf', err);
+            res.status(500).send();
+          }));
+});
+
 const sockets = [];
 const ws = require('ws');
 let server;
@@ -107,8 +144,6 @@ const connect = httpServer => {
     const params = urlPath.split(/=/);
 
     const username = params[1];
-
-    console.log('user', username, 'connected');
 
     if (!username) {
       socket.send('cannot connect without being logged in (provide username as url parameter)');
@@ -129,8 +164,6 @@ const connect = httpServer => {
 app.post('/travel-requests', (req, res) => {
   const user = req.header('X-Name');
 
-  console.log('user', user, 'body', req.body);
-
   if (!user) {
     return res.status(401).send('cannot send requests without being logged in (identify via X-Name header');
   }
@@ -142,8 +175,6 @@ app.post('/travel-requests', (req, res) => {
   }
 
   const usernames = req.body.usernames;
-
-  console.log('blah');
 
   if (!usernames || !(usernames instanceof Array)) {
     return res.status(400).send('usernames must be an array of strings');
