@@ -8,7 +8,7 @@ const Destination = require('./Destination.js');
 const User = require('./User.js');
 
 const app = express();
-const port = 7893;
+const port = process.env.PORT || 7893;
 
 app.use(cors());
 app.use(bodyParser.json());
