@@ -4,13 +4,13 @@ const users = [{
   username: 'andreas',
   name: 'Andreas',
   profilePicture: 'http://www.cbc.ca/smartestperson/content/image/avatar-placeholder.png',
-  friends: ['håkon'],
+  friends: ['håkon', 'martin'],
   destinations: ['Spain', 'Oslo', 'Bergen']
 }, {
   username: 'martin',
   name: 'Martin',
   profilePicture: 'http://askfedoratest-anuradhaw.rhcloud.com/static/askfedoratheme/images/man.png',
-  friends: ['håkon'],
+  friends: ['håkon', 'andreas'],
   destinations: ['Spain', 'LA', 'Oslo']
 }, {
   username: 'håkon',
