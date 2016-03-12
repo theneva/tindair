@@ -38,7 +38,8 @@ app.get('/users', (req, res) => res.send(User.all()));
 
 app.get('/users/:username', (req, res) => res.send(User.byUsername(req.params.username)));
 
-app.get('/users/:username/destinations', (req, res) => res.send(User.byUsername(req.params.username).destinations));
+app.get('/users/:username/destinations', (req, res) => res.send(User.byUsername(req.params.username).destinations
+    .map(destinationName => Destination.byName(destinationName))));
 
 app.post('/users/:username/destinations', (req, res) => {
   const destination = req.body.destination;

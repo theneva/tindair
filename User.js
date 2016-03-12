@@ -5,13 +5,13 @@ const users = [{
   name: 'Andreas',
   profilePicture: 'https://scontent-arn2-1.xx.fbcdn.net/hphotos-xfl1/v/t1.0-9/10479542_10152575819385491_7575197136310777683_n.jpg?oh=1cfaaee6833efd2235acb74b42bccbf5&oe=5757DC22',
   friends: ['håkon', 'martin'],
-  destinations: ['Spain', 'Oslo', 'Bergen']
+  destinations: ['Madrid', 'Oslo', 'Bergen']
 }, {
   username: 'martin',
   name: 'Martin',
   profilePicture: 'https://scontent-arn2-1.xx.fbcdn.net/hphotos-xaf1/v/t1.0-9/10351759_10152203958431517_379246105981390468_n.jpg?oh=65657f9ba8415a8f2eea6727fbe85a35&oe=574B4317',
   friends: ['håkon', 'andreas'],
-  destinations: ['Spain', 'LA', 'Oslo']
+  destinations: ['Madrid', 'LA', 'Oslo']
 }, {
   username: 'håkon',
   name: 'Håkon',
