@@ -98,39 +98,42 @@ app.get('/destinations/:name/users', (req, res) => res.send(User.byDestination(r
         ? util.arrayContains(user.friends.map(friend => friend.toLowerCase()), req.query.friendsWith.toLowerCase())
         : true)));
 
+let token = '';
+
+const clientId = 'V1:sb2temnqfhrdlmwx:DEVCENTER:EXT';
+const clientSecret = '37uKjBsS';
+
+const encodedClientId = btoa(clientId);
+const encodedClientSecret = btoa(clientSecret);
+
+const singleString = btoa(`${encodedClientId}:${encodedClientSecret}`);
+
+fetch('https://api.test.sabre.com/v2/auth/token', {
+  method: 'post',
+  headers: {
+    Authorization: `Basic ${singleString}`,
+    'Content-Type': 'application/x-www-form-urlencoded'
+  },
+  body: 'grant_type=client_credentials',
+})
+    .then(res => res.json())
+    .then(response => token = response.access_token);
+
 app.get('/destinations/:name/book', (req, res) => {
   const departureAirportCode = 'OSL';
   const destinationAirportCode = Destination.byName(req.params.name).airportCode;
 
-  const clientId = 'V1:sb2temnqfhrdlmwx:DEVCENTER:EXT';
-  const clientSecret = '37uKjBsS';
-
-  const encodedClientId = btoa(clientId);
-  const encodedClientSecret = btoa(clientSecret);
-
-  const singleString = btoa(`${encodedClientId}:${encodedClientSecret}`);
-
-  fetch('https://api.test.sabre.com/v2/auth/token', {
-    method: 'post',
+  fetch(`https://api.test.sabre.com/v2/shop/flights/fares?origin=${departureAirportCode}&destination=${destinationAirportCode}&departuredate=2016-03-18,2016-03-19,2016-03-20&lengthofstay=3,4,5,6,7&maxfare=50000`, {
     headers: {
-      Authorization: `Basic ${singleString}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
+      Authorization: `Bearer: ${token}`,
     },
-    body: 'grant_type=client_credentials',
   })
-      .then(res => res.json())
-      .then(response => response.access_token)
-      .then(token => fetch(`https://api.test.sabre.com/v2/shop/flights/fares?origin=${departureAirportCode}&destination=${destinationAirportCode}&departuredate=2016-03-18,2016-03-19,2016-03-20&lengthofstay=3,4,5,6,7&maxfare=50000`, {
-        headers: {
-          Authorization: `Bearer: ${token}`,
-        },
-      })
-          .then(response => response.json())
-          .then(flightInfo => res.json(flightInfo))
-          .catch(err => {
-            console.log('wtf', err);
-            res.status(500).send();
-          }));
+      .then(response => response.json())
+      .then(flightInfo => res.json(flightInfo))
+      .catch(err => {
+        console.log('wtf', err);
+        res.status(500).send();
+      });
 });
 
 const sockets = [];
